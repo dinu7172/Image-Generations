@@ -1,8 +1,9 @@
 import express from 'express';
 import { TrainModel, GenerateImage, GenerateImagesFromPack } from 'common/types';
 import { prismaClient } from 'db';
-import { S3Client, s3, write } from 'bun';
+import { S3Client } from 'bun';
 import { FalAIModel } from './models/FalAIModel';
+import cors from 'cors';
 
 const USER_ID = "123";
 const PORT = process.env.PORT || 8080;
@@ -10,6 +11,8 @@ const PORT = process.env.PORT || 8080;
 const falAiModal = new FalAIModel();
 
 const app = express();
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.json());
 
 app.listen(PORT, () => {
@@ -19,9 +22,11 @@ app.listen(PORT, () => {
 app.get("/pre-signed-url", async(req, res) => {
     const key = `models/${Date.now()}_${Math.random()}.zip`
     const url = S3Client.presign(key, {
+         method: 'PUT',
          bucket: process.env.BUCKET_NAME,
          accessKeyId: process.env.S3_ACCESS_KEY,
          secretAccessKey: process.env.S3_SECRET_KEY,
+         endpoint: process.env.ENDPOINT,
          expiresIn: 60 * 5
     })
     res.json({
